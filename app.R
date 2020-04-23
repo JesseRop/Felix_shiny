@@ -1,5 +1,5 @@
+setwd("D:/GCRF_UoG/Felix_shiny/")
 source("leish_lib_files_loading.R")
-
 
 ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme("cerulean"), 
                #tags$head(tags$style("div.dataTables_scrollHead span {color: black}")),
@@ -41,7 +41,15 @@ ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme
                                 # )
                               )
                               
-                            )
+                            ),
+                            tags$hr(),
+                          wellPanel(style = "background:LightBlue",
+                                    tags$hr(),
+                                    tags$p(style = "font-family:Comic Sans MS;color:black",
+                                           "Visualization of gene expression of one or more genes in the different cell populations using Violin plots and UMAP feature plots."
+                                    ),
+                                    tags$hr()
+                          )
                           )
                    ),
                    
@@ -60,7 +68,20 @@ ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme
                          multiple = T,
                          selected = c("LmxM.33.3645","LmxM.15.1240", "LmxM.08.0810", "LmxM.10.0870")
                        ),
-                       withSpinner(plotOutput("dotplot"))
+                       withSpinner(plotOutput("dotplot")),
+                       tags$hr(),
+                       wellPanel(style = "background:LightBlue",
+                                 tags$hr(),
+                                 tags$p(style = "font-family:Comic Sans MS;color:black",
+                                        #paste("Comparison of", input$select_markers_dotplot[1], input$select_markers_dotplot[2], "expression between", conditions[1], "and", conditions[2], "across clusters using a dotplot. Red for Wildtype and Blue for CD18 KO cells with the increasing in intensity of the respective colour correlating with the level of gene expression in the cluster"),
+                                        # paste(unlist(for (i in 1:length(input$select_markers_dotplot)) {
+                                        #   print(paste(input$select_markers_dotplot[i]))
+                                        # }
+                                        paste("Comparison of gene expression across cell populations using a dotplot. The genes are on the x-axis and the populations on the y-axis. The increase in intensity from grey to blue correlates with the increase in the average level of gene expression across all cells in the cluster. The size of the dot corresponds to the percentage of cells in the cluster expressing the gene.")
+                                        
+                                 ),
+                                 tags$hr()
+                       )
                        # )
                      )
                    )
@@ -80,7 +101,7 @@ ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme
                      sliderInput(
                        inputId = "UMAP",
                        label = strong("Clustering resolution"),
-                       value = res1,
+                       value = res_default,
                        min = res1,
                        max = res2,
                        step = diff_res
@@ -92,9 +113,23 @@ ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme
                      # box(title = "Cluster labelling based on marker genes",
                      #     width = NULL,
                      #     solidHeader = TRUE,
-                     uiOutput("cluster_annot")
+                     uiOutput("cluster_annot"),
                      # )
-                   )),
+                     tags$hr(),
+                   wellPanel(style = "background:LightBlue",
+                             tags$hr(),
+                             tags$p(style = "font-family:Comic Sans MS;color:black",
+                                    #paste("Comparison of", input$select_markers_dotplot[1], input$select_markers_dotplot[2], "expression between", conditions[1], "and", conditions[2], "across clusters using a dotplot. Red for Wildtype and Blue for CD18 KO cells with the increasing in intensity of the respective colour correlating with the level of gene expression in the cluster"),
+                                    # paste(unlist(for (i in 1:length(input$select_markers_dotplot)) {
+                                    #   print(paste(input$select_markers_dotplot[i]))
+                                    # }
+                                    paste("Labelling of cell populations based on top cluster markers in the 'Cluster marker' table on the left.")
+                                    
+                             ),
+                             tags$hr()
+                   )
+                   )
+                   ),
                  
                  column(
                    7, 
@@ -103,7 +138,20 @@ ui = navbarPage(title = "Leishmania scRNA-seq visualization", theme = shinytheme
                      h4("Cluster markers"),
                      # width = NULL,
                      # solidHeader = TRUE,
-                     withSpinner(DTOutput("marker_table"))
+                     withSpinner(DTOutput("marker_table")),
+                     tags$hr(),
+                   wellPanel(style = "background:LightBlue",
+                             tags$hr(),
+                             tags$p(style = "font-family:Comic Sans MS;color:black",
+                                    #paste("Comparison of", input$select_markers_dotplot[1], input$select_markers_dotplot[2], "expression between", conditions[1], "and", conditions[2], "across clusters using a dotplot. Red for Wildtype and Blue for CD18 KO cells with the increasing in intensity of the respective colour correlating with the level of gene expression in the cluster"),
+                                    # paste(unlist(for (i in 1:length(input$select_markers_dotplot)) {
+                                    #   print(paste(input$select_markers_dotplot[i]))
+                                    # }
+                                    paste("Table of markers of cluster/s selected from the 'ScRNA-seq cluster' column. Here, markers are genes highly expressed in a cluster as compared to all other clusters. A set of top marker genes in cluster can be used to infer its identity.")
+                                    
+                             ),
+                             tags$hr()
+                   )
                      
                      # )
                    )
@@ -145,21 +193,32 @@ server = function(input, output) {
         "Gene",
         "scRNA-seq cluster",
         "Avg_logFC",
-        "% in cluster 1",
-        "% in cluster 2",
+        "% in interest cluster",
+        "% in other clusters",
         "Adjusted P"
       ),
       selection = "single",
       rownames = FALSE,
       filter = list(position = "top", plain = TRUE),
       style = "default",
-      extensions = "Scroller",
+      extensions = c("Buttons","Scroller"),
       options = list(
         deferRender = TRUE,
         scrollY = 350,
-        scroller = TRUE,
-        lengthMenu = FALSE,
-        autoWidth = FALSE
+        #scroller = TRUE,
+        #lengthMenu = FALSE,
+        autoWidth = FALSE,
+        dom = "Blfrtip",
+        buttons = 
+          list(list(
+            extend = "collection",
+            buttons = c("csv", "pdf"),
+            text = "Download"
+          )),  # end of buttons customization
+        
+        # customize the length menu
+        lengthMenu = list( c(10, 20, -1), c(10, 20, "All")), # end of lengthMenu customization
+        pageLength = 10
       )
     ) %>%
       DT::formatSignif(columns = numeric_cols, digits = 3)
